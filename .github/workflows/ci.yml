@@ -61,7 +61,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Download current test results from matrix
       - uses: actions/download-artifact@v4
         with:
           name: test-results-node-16
@@ -75,7 +74,6 @@ jobs:
           name: test-results-node-20
           path: curr-results/node-20
 
-      # Concatenate test counts
       - name: Calculate current total tests
         id: count
         run: |
@@ -86,7 +84,6 @@ jobs:
           echo "total_tests=$TOTAL" >> $GITHUB_OUTPUT
           echo "Current total tests: $TOTAL"
 
-      # Compare with previous total tests
       - name: Fail if total tests decreased
         run: |
           PREV=60  # Replace with last known total tests or fetch dynamically
