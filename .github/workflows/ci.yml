@@ -138,6 +138,4 @@ jobs:
         with:
           name: build-artifact
           path: dist/
-      - name: Manual approval before publishing (optional)
-        if: github.ref == 'refs/heads/main'
-        uses: hmarr/auto-approve-action@v4
+    
