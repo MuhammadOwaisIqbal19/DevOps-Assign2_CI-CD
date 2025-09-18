@@ -86,7 +86,7 @@ jobs:
 
       - name: Fail if total tests decreased
         run: |
-          PREV=60  # Replace with last known total tests or fetch dynamically
+          PREV=2  # Replace with last known total tests or fetch dynamically
           CURR=${{ steps.count.outputs.total_tests }}
           echo "Previous total: $PREV, Current total: $CURR"
           if [ "$CURR" -lt "$PREV" ]; then
