@@ -71,10 +71,6 @@ jobs:
           name: test-results-node-20
           path: curr-results/node-20
 
-      # OPTIONAL: Download previous results (from main branch artifacts)
-      # You need to manage storing previous run artifacts manually or via workflow artifacts API
-      # Here we assume you have previous results in `prev-results` folder
-
       # Concatenate test counts
       - name: Calculate current total tests
         id: count
@@ -86,10 +82,10 @@ jobs:
           echo "total_tests=$TOTAL" >> $GITHUB_OUTPUT
           echo "Current total tests: $TOTAL"
 
-      # Compare with previous total tests
+      # Compare with previous total tests (example: replace with real previous artifact)
       - name: Fail if total tests decreased
         run: |
-          PREV=60  # Replace with last known total tests or fetch from previous artifact
+          PREV=60  # Replace with last known total tests or fetch dynamically
           CURR=${{ steps.count.outputs.total_tests }}
           echo "Previous total: $PREV, Current total: $CURR"
           if [ "$CURR" -lt "$PREV" ]; then
@@ -107,9 +103,10 @@ jobs:
         with:
           node-version: 'current'
       - run: npm install
-      - run: |
+      - name: Run nightly tests
+        run: |
           mkdir -p test-results
-          npm test
+          npx jest --json --outputFile=test-results/result.json
       - uses: actions/upload-artifact@v4
         with:
           name: nightly-test-results
