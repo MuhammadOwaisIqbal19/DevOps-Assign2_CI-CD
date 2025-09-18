@@ -37,7 +37,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fix Jest permissions
+        run: chmod +x node_modules/.bin/jest
 
       - name: Run tests
         run: |
@@ -82,7 +86,7 @@ jobs:
           echo "total_tests=$TOTAL" >> $GITHUB_OUTPUT
           echo "Current total tests: $TOTAL"
 
-      # Compare with previous total tests (example: replace with real previous artifact)
+      # Compare with previous total tests
       - name: Fail if total tests decreased
         run: |
           PREV=60  # Replace with last known total tests or fetch dynamically
@@ -102,7 +106,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'current'
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
+      - name: Fix Jest permissions
+        run: chmod +x node_modules/.bin/jest
       - name: Run nightly tests
         run: |
           mkdir -p test-results
@@ -124,7 +131,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
       - name: Build project
         run: |
           mkdir -p dist
