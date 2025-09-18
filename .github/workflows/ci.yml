@@ -1,0 +1,141 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip the build step'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: '0 0 * * *' # Nightly run
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - run: npm install
+
+      - name: Run tests
+        run: |
+          mkdir -p test-results
+          npm test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-node-${{ matrix.node-version }}
+          path: test-results/
+
+  test-summary:
+    name: Summarize & Compare Tests
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download current test results from matrix
+      - uses: actions/download-artifact@v3
+        with:
+          name: test-results-node-16
+          path: curr-results/node-16
+      - uses: actions/download-artifact@v3
+        with:
+          name: test-results-node-18
+          path: curr-results/node-18
+      - uses: actions/download-artifact@v3
+        with:
+          name: test-results-node-20
+          path: curr-results/node-20
+
+      # OPTIONAL: Download previous results (from main branch artifacts)
+      # You need to manage storing previous run artifacts manually or via workflow artifacts API
+      # Here we assume you have previous results in `prev-results` folder
+
+      # Concatenate test counts
+      - name: Calculate current total tests
+        id: count
+        run: |
+          CURR16=$(jq '.numTotalTests' curr-results/node-16/*.json)
+          CURR18=$(jq '.numTotalTests' curr-results/node-18/*.json)
+          CURR20=$(jq '.numTotalTests' curr-results/node-20/*.json)
+          TOTAL=$((CURR16 + CURR18 + CURR20))
+          echo "total_tests=$TOTAL" >> $GITHUB_OUTPUT
+          echo "Current total tests: $TOTAL"
+
+      # Compare with previous total tests
+      - name: Fail if total tests decreased
+        run: |
+          PREV=60  # Replace with last known total tests or fetch from previous artifact
+          CURR=${{ steps.count.outputs.total_tests }}
+          echo "Previous total: $PREV, Current total: $CURR"
+          if [ "$CURR" -lt "$PREV" ]; then
+            echo "Total tests decreased! Failing workflow."
+            exit 1
+          fi
+
+  nightly:
+    name: Nightly Test on Node Current
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 'current'
+      - run: npm install
+      - run: |
+          mkdir -p test-results
+          npm test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: nightly-test-results
+          path: test-results/
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test, test-summary]
+    if: |
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+      && (github.event.inputs.skip_build != 'true')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Build project
+        run: |
+          mkdir -p dist
+          echo "Building project..." > dist/build.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: dist/
+      - name: Manual approval before publishing (optional)
+        if: github.ref == 'refs/heads/main'
+        uses: hmarr/auto-approve-action@v2
