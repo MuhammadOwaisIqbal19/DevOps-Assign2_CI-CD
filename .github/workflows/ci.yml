@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -45,7 +45,7 @@ jobs:
           npm test
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-node-${{ matrix.node-version }}
           path: test-results/
@@ -58,15 +58,15 @@ jobs:
       - uses: actions/checkout@v4
 
       # Download current test results from matrix
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: test-results-node-16
           path: curr-results/node-16
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: test-results-node-18
           path: curr-results/node-18
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: test-results-node-20
           path: curr-results/node-20
@@ -103,14 +103,14 @@ jobs:
     if: github.event_name == 'schedule'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 'current'
       - run: npm install
       - run: |
           mkdir -p test-results
           npm test
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: nightly-test-results
           path: test-results/
@@ -124,7 +124,7 @@ jobs:
       && (github.event.inputs.skip_build != 'true')
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install
@@ -132,10 +132,10 @@ jobs:
         run: |
           mkdir -p dist
           echo "Building project..." > dist/build.txt
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: dist/
       - name: Manual approval before publishing (optional)
         if: github.ref == 'refs/heads/main'
-        uses: hmarr/auto-approve-action@v2
+        uses: hmarr/auto-approve-action@v4
